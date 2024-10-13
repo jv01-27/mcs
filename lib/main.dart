@@ -24,7 +24,7 @@ const _credentials = r'''
 /// It can be found in the link to your spreadsheet -
 /// link looks like so https://docs.google.com/spreadsheets/d/YOUR_SPREADSHEET_ID/edit#gid=0
 /// [YOUR_SPREADSHEET_ID] in the path is the id your need
-const _spreadsheetId = '';
+const _spreadsheetId = '1w26jdBCXNc-tZiCJcYzzG0p4j7tvYLRNZe87cdFk9bg';
 
 void main() async {
   // init GSheets
