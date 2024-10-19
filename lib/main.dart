@@ -13,8 +13,8 @@ class Main extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue, // Set the app's primary theme color
       ),
-      title: 'Flutter Form Example',
-      home: MyForm(),
+      title: 'Producto',
+      home: ProductForm(),
     );
   }
 }
