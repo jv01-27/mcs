@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 class ProductForm extends StatefulWidget {
   const ProductForm({super.key});
@@ -31,6 +32,8 @@ class _ProductFormState extends State<ProductForm> {
     }
   }
 
+    final TextEditingController _dateController = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +47,13 @@ class _ProductFormState extends State<ProductForm> {
           child: Column(
             children: <Widget>[
               TextFormField(
+                controller: _dateController,
                 decoration: const InputDecoration(labelText: 'Fecha'),
+                keyboardType: TextInputType.datetime,
+                inputFormatters: [
+                  FilteringTextInputFormatter.digitsOnly,
+                  _DateFormattingFormatter(),
+                ],
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Por favor, ingresa la fecha.';
@@ -57,6 +66,7 @@ class _ProductFormState extends State<ProductForm> {
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'SKU'),
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Por favor, ingresa el SKU.';
@@ -69,6 +79,7 @@ class _ProductFormState extends State<ProductForm> {
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'Código'),
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value!.isEmpty) {
                     return 'Por favor, ingresa el código.';
@@ -113,5 +124,35 @@ class _ProductFormState extends State<ProductForm> {
         ),
       ),
     );
+  }
+}
+
+class _DateFormattingFormatter extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    if (newValue.text.isNotEmpty) {
+      final newText = _formatDate(newValue.text);
+      return TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+
+      );
+    }
+    return newValue;
+
+  }
+
+  String _formatDate(String date) {
+    if (date.length <= 2) {
+      return date;
+    } else if (date.length <= 4) {
+      return '${date.substring(0, 2)}/${date.substring(2)}';
+    } else if (date.length <= 8) {
+      return '${date.substring(0, 2)}/${date.substring(2, 4)}/${date.substring(4)}';
+    }
+    return date;
   }
 }
