@@ -39,10 +39,12 @@ class _ProductFormState extends State<ProductForm> {
   String _codigo = '';
   String _modelo = '';
   String _marca = '';
+  int _productsPerBox = 0;
+  int _totalProductsSubmitted = 0;
 
   final TextEditingController _dateController = TextEditingController();
 
-  // Función para enviar los datos a Google Sheets
+  // Enviar los datos a Google Sheets
   Future<void> _submitForm() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -55,6 +57,14 @@ class _ProductFormState extends State<ProductForm> {
         print('Marca: $_marca');
       }
 
+      // Cálculo del número de caja
+      int currentBoxNumber = (_productsPerBox > 0)
+          ? ((_totalProductsSubmitted ~/ _productsPerBox) + 1)
+          : 0; // Calcula el número de caja
+
+      // Incrementa el conteo total de productos enviados
+      _totalProductsSubmitted++;
+
       // Conexión con Google Sheets
       final gsheets = GSheets(_credentials);
       final ss = await gsheets.spreadsheet(_spreadsheetId);
@@ -62,11 +72,11 @@ class _ProductFormState extends State<ProductForm> {
       sheet ??= await ss.addWorksheet('Productos');
 
       // Insertar encabezados si es la primera vez
-      final headers = ['Fecha', 'SKU', 'Codigo', 'Modelo', 'Marca'];
+      final headers = ['Fecha', 'SKU', 'Codigo', 'Modelo', 'Marca', 'N° de Caja'];
       await sheet.values.insertRow(1, headers);
 
       // Insertar los datos del producto
-      final data = [_fecha, _sku, _codigo, _modelo, _marca];
+      final data = [_fecha, _sku, _codigo, _modelo, _marca, currentBoxNumber];
       await sheet.values.appendRow(data);
 
       if (kDebugMode) {
@@ -160,6 +170,22 @@ class _ProductFormState extends State<ProductForm> {
                 },
                 onSaved: (value) {
                   _marca = value!;
+                },
+              ),
+              TextFormField(
+                decoration: const InputDecoration(
+                    labelText: 'N° de Productos por caja'),
+                keyboardType: TextInputType.number,
+                validator: (value) {
+                  if (value!.isEmpty) {
+                    return 'Por favor, ingresa el número de productos por caja.';
+                  }
+                  return null;
+                },
+                onSaved: (value) {
+                  // Store the entered value in a new variable, e.g., _productsPerBox
+                  _productsPerBox =
+                      int.tryParse(value!) ?? 0; // Handle empty input
                 },
               ),
               const SizedBox(height: 20.0),
