@@ -36,11 +36,13 @@ class _ProductFormState extends State<ProductForm> {
 
   String _fecha = '';
   String _sku = '';
-  String _codigo = '';
+  // String _codigo = '';
   String _modelo = '';
   String _marca = '';
   int _productsPerBox = 0;
   int _totalProductsSubmitted = 0;
+  int _boxPerPallet = 0;
+  int _boxesLeftOnPallet = 0;
 
   final TextEditingController _dateController = TextEditingController();
 
@@ -52,7 +54,7 @@ class _ProductFormState extends State<ProductForm> {
       if (kDebugMode) {
         print('Fecha: $_fecha');
         print('SKU: $_sku');
-        print('Código: $_codigo');
+        // print('Código: $_codigo');
         print('Modelo: $_modelo');
         print('Marca: $_marca');
       }
@@ -65,6 +67,11 @@ class _ProductFormState extends State<ProductForm> {
       // Incrementa el conteo total de productos enviados
       _totalProductsSubmitted++;
 
+      // Calcula las cajas restantes en la tarima actual
+      if (_boxPerPallet > 0) {
+        _boxesLeftOnPallet = _boxPerPallet - (currentBoxNumber % _boxPerPallet);
+      }
+
       // Conexión con Google Sheets
       final gsheets = GSheets(_credentials);
       final ss = await gsheets.spreadsheet(_spreadsheetId);
@@ -72,11 +79,18 @@ class _ProductFormState extends State<ProductForm> {
       sheet ??= await ss.addWorksheet('Productos');
 
       // Insertar encabezados si es la primera vez
-      final headers = ['Fecha', 'SKU', 'Codigo', 'Modelo', 'Marca', 'N° de Caja'];
+      final headers = [
+        'Fecha',
+        'SKU',
+        'Codigo',
+        // 'Modelo',
+        'Marca',
+        'N° de Caja'
+      ];
       await sheet.values.insertRow(1, headers);
 
       // Insertar los datos del producto
-      final data = [_fecha, _sku, _codigo, _modelo, _marca, currentBoxNumber];
+      final data = [_fecha, _sku, _modelo, _marca, currentBoxNumber];
       await sheet.values.appendRow(data);
 
       if (kDebugMode) {
@@ -89,11 +103,15 @@ class _ProductFormState extends State<ProductForm> {
           content: Text('Datos enviados a Google Sheets'),
         ),
       );
+
+      setState(() {}); // Actualiza la interfaz
+      
     }
   }
 
   @override
   Widget build(BuildContext context) {
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Formulario de Producto'),
@@ -104,23 +122,148 @@ class _ProductFormState extends State<ProductForm> {
           padding: const EdgeInsets.all(16.0),
           child: Column(
             children: <Widget>[
-              TextFormField(
-                controller: _dateController,
-                decoration: const InputDecoration(labelText: 'Fecha'),
-                keyboardType: TextInputType.datetime,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                  _DateFormattingFormatter(),
+              Row(
+                children: [
+                  Expanded(
+                    flex: 33,
+                    child: TextFormField(
+                      controller: _dateController,
+                      decoration: const InputDecoration(labelText: 'Fecha'),
+                      keyboardType: TextInputType.datetime,
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        _DateFormattingFormatter(),
+                      ],
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Por favor, ingresa la fecha.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _fecha = value!;
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    flex: 34,
+                    child: TextFormField(
+                      decoration: const InputDecoration(labelText: 'Marca'),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Por favor, ingresa la marca.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _marca = value!;
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    flex: 33,
+                    child: TextFormField(
+                      decoration: const InputDecoration(labelText: 'Modelo'),
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Por favor, ingresa el modelo.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _modelo = value!;
+                      },
+                    ),
+                  ),
                 ],
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa la fecha.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _fecha = value!;
-                },
+              ),
+              Row(
+                children: [
+                  // Expanded(
+                  //   flex: 50,
+                  //   child: TextFormField(
+                  //     decoration: const InputDecoration(labelText: 'Producto'),
+                  //     keyboardType: TextInputType.number,
+                  //     validator: (value) {
+                  //       if (value!.isEmpty) {
+                  //         return 'Por favor, ingresa el dato.';
+                  //       }
+                  //       return null;
+                  //     },
+                  //     onSaved: (value) {
+                  //       _codigo = value!;
+                  //     },
+                  //   ),
+                  // ),
+                  Expanded(
+                    flex: 50,
+                    child: DropdownButtonFormField<int>(
+                      decoration: const InputDecoration(
+                        labelText: 'N° de Productos por caja',
+                      ),
+                      value: _productsPerBox > 0
+                          ? _productsPerBox
+                          : null, // valor inicial
+                      items: List.generate(
+                        15,
+                        (index) => DropdownMenuItem<int>(
+                          value: index + 1,
+                          child: Text((index + 1).toString()),
+                        ),
+                      ),
+                      onChanged: (value) {
+                        setState(() {
+                          _productsPerBox = value ?? 1;
+                        });
+                      },
+                      validator: (value) {
+                        if (value == null) {
+                          return 'Por favor, selecciona el número de productos por caja.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _productsPerBox = value ?? 1;
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    flex: 50,
+                    child: Text(
+                      'Productos registrados: $_totalProductsSubmitted',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 50,
+                    child: TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'N° de Cajas por tarima'),
+                          keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value!.isEmpty) {
+                          return 'Por favor, ingresa el número.';
+                        }
+                        return null;
+                      },
+                      onSaved: (value) {
+                        _boxPerPallet = int.tryParse(value!) ?? 0; // Handle empty input
+                      },
+                    ),
+                  ),
+                  Expanded(
+                    flex: 50,
+                    child: Text(
+                      'Cajas faltantes: $_boxesLeftOnPallet',
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
+                ],
               ),
               TextFormField(
                 decoration: const InputDecoration(labelText: 'SKU'),
@@ -133,59 +276,6 @@ class _ProductFormState extends State<ProductForm> {
                 },
                 onSaved: (value) {
                   _sku = value!;
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Código'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa el código.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _codigo = value!;
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Modelo'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa el modelo.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _modelo = value!;
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(labelText: 'Marca'),
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa la marca.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  _marca = value!;
-                },
-              ),
-              TextFormField(
-                decoration: const InputDecoration(
-                    labelText: 'N° de Productos por caja'),
-                keyboardType: TextInputType.number,
-                validator: (value) {
-                  if (value!.isEmpty) {
-                    return 'Por favor, ingresa el número de productos por caja.';
-                  }
-                  return null;
-                },
-                onSaved: (value) {
-                  // Store the entered value in a new variable, e.g., _productsPerBox
-                  _productsPerBox =
-                      int.tryParse(value!) ?? 0; // Handle empty input
                 },
               ),
               const SizedBox(height: 20.0),
@@ -228,3 +318,4 @@ class _DateFormattingFormatter extends TextInputFormatter {
     return date;
   }
 }
+
