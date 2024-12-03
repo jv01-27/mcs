@@ -67,9 +67,23 @@ class _ProductFormState extends State<ProductForm> {
       // Incrementa el conteo total de productos enviados
       _totalProductsSubmitted++;
 
-      // Calcula las cajas restantes en la tarima actual
+// Cálculo del número de cajas completas enviadas
+      int totalBoxesSubmitted =
+          (_totalProductsSubmitted / _productsPerBox).ceil();
+
+// Calcula las cajas restantes en la tarima actual
       if (_boxPerPallet > 0) {
-        _boxesLeftOnPallet = _boxPerPallet - (currentBoxNumber % _boxPerPallet);
+        _boxesLeftOnPallet =
+            _boxPerPallet - (totalBoxesSubmitted % _boxPerPallet);
+        if (_boxesLeftOnPallet == _boxPerPallet && totalBoxesSubmitted > 0) {
+          _boxesLeftOnPallet = 0; // No hay cajas faltantes en la tarima
+        }
+      }
+
+      // Validar si se completó la ronda de escaneo
+      int totalProductsInRound = _productsPerBox * _boxPerPallet;
+      if (_totalProductsSubmitted == totalProductsInRound) {
+        _showCompletionDialog(); // Llamar al método para mostrar el diálogo
       }
 
       // Conexión con Google Sheets
@@ -105,13 +119,45 @@ class _ProductFormState extends State<ProductForm> {
       );
 
       setState(() {}); // Actualiza la interfaz
-      
     }
+  }
+
+  void _showCompletionDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('¡Ronda Completada!'),
+          content: const Text(
+              'Has completado el escaneo para la cantidad total de productos en esta tarima.'),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                // Reiniciar los campos
+                setState(() {
+                  _fecha = '';
+                  _sku = '';
+                  _modelo = '';
+                  _marca = '';
+                  _productsPerBox = 0;
+                  _totalProductsSubmitted = 0;
+                  _boxPerPallet = 0;
+                  _boxesLeftOnPallet = 0;
+                  _dateController.clear();
+                });
+
+                Navigator.of(context).pop(); // Cierra el diálogo
+              },
+              child: const Text('Aceptar'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('Formulario de Producto'),
@@ -244,7 +290,7 @@ class _ProductFormState extends State<ProductForm> {
                     child: TextFormField(
                       decoration: const InputDecoration(
                           labelText: 'N° de Cajas por tarima'),
-                          keyboardType: TextInputType.number,
+                      keyboardType: TextInputType.number,
                       validator: (value) {
                         if (value!.isEmpty) {
                           return 'Por favor, ingresa el número.';
@@ -252,7 +298,8 @@ class _ProductFormState extends State<ProductForm> {
                         return null;
                       },
                       onSaved: (value) {
-                        _boxPerPallet = int.tryParse(value!) ?? 0; // Handle empty input
+                        _boxPerPallet =
+                            int.tryParse(value!) ?? 0; // Handle empty input
                       },
                     ),
                   ),
@@ -318,4 +365,3 @@ class _DateFormattingFormatter extends TextInputFormatter {
     return date;
   }
 }
-
