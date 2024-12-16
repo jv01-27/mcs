@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gsheets/gsheets.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+// import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
 // Credenciales de Google API
 const _credentials = r'''
@@ -157,26 +157,26 @@ class _ProductFormState extends State<ProductForm> {
     );
   }
 
-  Future<void> _scanBarcode() async {
-    try {
-      final scannedCode = await FlutterBarcodeScanner.scanBarcode(
-        '#ff6666', // Color del botón cancelar
-        'Cancelar', // Texto del botón cancelar
-        true, // Habilitar escaneo de flash
-        ScanMode.BARCODE, // Modo de escaneo
-      );
-      if (scannedCode != '-1') {
-        setState(() {
-          _sku = scannedCode;
-        });
-      }
-    } catch (e) {
-      // Manejo de errores
-      if (kDebugMode) {
-        print('Error al escanear el código de barras: $e');
-      }
-    }
-  }
+  // Future<void> _scanBarcode() async {
+  //   try {
+  //     final scannedCode = await FlutterBarcodeScanner.scanBarcode(
+  //       '#ff6666', // Color del botón cancelar
+  //       'Cancelar', // Texto del botón cancelar
+  //       true, // Habilitar escaneo de flash
+  //       ScanMode.BARCODE, // Modo de escaneo
+  //     );
+  //     if (scannedCode != '-1') {
+  //       setState(() {
+  //         _sku = scannedCode;
+  //       });
+  //     }
+  //   } catch (e) {
+  //     // Manejo de errores
+  //     if (kDebugMode) {
+  //       print('Error al escanear el código de barras: $e');
+  //     }
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -353,7 +353,8 @@ class _ProductFormState extends State<ProductForm> {
                   ),
                   IconButton(
                     icon: const Icon(Icons.camera_alt),
-                    onPressed: _scanBarcode,
+                    // onPressed: _scanBarcode,
+                    onPressed: null,
                   ),
                 ],
               ),
